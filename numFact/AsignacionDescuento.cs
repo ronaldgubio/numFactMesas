@@ -23,13 +23,18 @@ namespace numFact
 
         private String idTabla;
 
+        private decimal propinaEfectivo;
+        private decimal propinaTarjeta;
+
         public Form1 FormularioPrincipal;
 
-        public AsignacionDescuento(String idTabla, Decimal valorTotalDescuento)
+        public AsignacionDescuento(String idTabla, Decimal valorTotalDescuento, decimal propinaEfectivo, decimal propinaTarjeta)
         {
             InitializeComponent();
             this.valorTotalDescuento = valorTotalDescuento;
             this.idTabla = idTabla;
+            this.propinaEfectivo = propinaEfectivo;
+            this.propinaTarjeta = propinaTarjeta;
             pixelDAO = new PixelDao();
             iniciarColumnasGrid();
         }
@@ -112,7 +117,7 @@ namespace numFact
                     descuentos.Add(descuento);
                 }
 
-                pixelDAO.EjecutarProcesoVentasMasDescuentosMasNomina(idTabla, descuentos);
+                pixelDAO.EjecutarProcesoVentasMasDescuentosMasNomina(idTabla, descuentos, propinaEfectivo, propinaTarjeta);
                 this.Invoke(new Action(() => { MessageBox.Show(this, "Ventas cargadas y descuentos asignados", "Correcto", MessageBoxButtons.OK, MessageBoxIcon.Information); }));
 
                 this.Invoke(new Action(() => { ((Form1)this.Owner).SeguirProcesandoVentas = false; }));
@@ -335,7 +340,7 @@ namespace numFact
                 PrintDocument p = new PrintDocument();
                 p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
                 {
-                    e1.Graphics.DrawString(formato, new Font("Times New Roman", 12), new SolidBrush(Color.Black), new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height - 100));
+                    e1.Graphics.DrawString(formato, new Font("Times New Roman", 12), new SolidBrush(Color.Black), new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height - 1));
                 };
                 p.PrinterSettings.PrinterName = GetConfigProp("PrinterName");
                 p.Print();

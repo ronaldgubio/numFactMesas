@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Odbc;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,15 +14,17 @@ namespace numFact.conexion
         public OdbcConnection GetOdbcConnectionPixel()
         {
             OdbcConnection cn;
-            cn = new OdbcConnection("dsn=PixelSQLBase;UID=dba;PWD=banana1;CHARSET=UTF-8");
+            cn = new OdbcConnection("dsn=PixelSqlBase;UID=dba;PWD=banana1;CHARSET=UTF-8");
             cn.Open();
             return cn;
         }
 
-        public OdbcConnection getOdbcConnectionSquarenet()
+
+        //TABLITA MESAS
+        public SqlConnection getOdbcConnectionSquarenet()
         {
-            OdbcConnection cn;
-            cn = new OdbcConnection("dsn=squarenet_tablita;UID=squarenet;PWD=LaTab2015+;");
+            SqlConnection cn;
+            cn = new SqlConnection("Data Source=tcp:squarenetweb.database.windows.net;Initial Catalog=SquareNetBD_Tablita;user id = TablitaUsuarioSoloLectura; password =Huch?trA.@i!cHEPePlst5fR1D0C*$TithON@x");
             cn.Open();
             return cn;
         }
@@ -36,13 +39,13 @@ namespace numFact.conexion
         }
 
 
-        public OdbcConnection GetOdbcConnectionORA()
+        /*public OdbcConnection GetOdbcConnectionORA()
         {
             OdbcConnection cn;
             cn = new OdbcConnection("dsn=CONEXION-ORACLE;UID=ltgrp;PWD=ltgrp;");
             cn.Open();
             return cn;
-        }
+        }*/
 
 
         public void RollbackAndCloseTransaction(OdbcTransaction tranPixel)
@@ -113,5 +116,67 @@ namespace numFact.conexion
                 dataReader.Close();
             }
         }
+
+
+        // Código de funciones de utilidad para SqlConnection
+        public void RollbackAndCloseTransactionSql(SqlTransaction tranPixel)
+        {
+            if (tranPixel != null)
+            {
+                try
+                {
+                    tranPixel.Rollback();
+                }
+                finally
+                {
+                    if (tranPixel.Connection != null)
+                    {
+                        tranPixel.Connection.Close();
+                    }
+                }
+            }
+        }
+
+        public void CommitAndCloseTransactionSql(SqlTransaction tranPixel)
+        {
+            if (tranPixel != null)
+            {
+                try
+                {
+                    tranPixel.Commit();
+                }
+                finally
+                {
+                    if (tranPixel.Connection != null)
+                    {
+                        tranPixel.Connection.Close();
+                    }
+                }
+            }
+        }
+
+        public void CommitTransactionSql(SqlTransaction tranPixel)
+        {
+            if (tranPixel != null)
+            {
+                try
+                {
+                    tranPixel.Commit();
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }
+        }
+
+        internal void CloseConnectionSql(SqlConnection con)
+        {
+            if (con != null)
+            {
+                con.Close();
+            }
+        }
+
     }
 }

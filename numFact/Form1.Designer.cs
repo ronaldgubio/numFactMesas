@@ -50,6 +50,10 @@
             this.label3 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
             this.buttonCerrar = new System.Windows.Forms.Button();
+            this.textBoxPropinaEfectivo = new System.Windows.Forms.TextBox();
+            this.textBoxPropinaTarjeta = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewFE)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewVentas)).BeginInit();
             this.panelOculto.SuspendLayout();
@@ -155,7 +159,7 @@
             dataGridViewCellStyle6.SelectionForeColor = System.Drawing.Color.Black;
             this.dataGridViewVentas.RowsDefaultCellStyle = dataGridViewCellStyle6;
             this.dataGridViewVentas.ShowEditingIcon = false;
-            this.dataGridViewVentas.Size = new System.Drawing.Size(278, 150);
+            this.dataGridViewVentas.Size = new System.Drawing.Size(278, 111);
             this.dataGridViewVentas.TabIndex = 11;
             // 
             // buttonProcesarFacturasElectronicas
@@ -253,9 +257,9 @@
             this.label3.ForeColor = System.Drawing.Color.Black;
             this.label3.Location = new System.Drawing.Point(18, 15);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(410, 24);
+            this.label3.Size = new System.Drawing.Size(476, 24);
             this.label3.TabIndex = 19;
-            this.label3.Text = "Procesamiento de información LTG V 3.0.4";
+            this.label3.Text = "Procesamiento de información LTG V 3.0.5 Mesas";
             this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
             // panel2
@@ -284,12 +288,48 @@
             this.buttonCerrar.UseVisualStyleBackColor = true;
             this.buttonCerrar.Click += new System.EventHandler(this.buttonCerrar_Click);
             // 
+            // textBoxPropinaEfectivo
+            // 
+            this.textBoxPropinaEfectivo.Location = new System.Drawing.Point(215, 246);
+            this.textBoxPropinaEfectivo.Name = "textBoxPropinaEfectivo";
+            this.textBoxPropinaEfectivo.Size = new System.Drawing.Size(139, 20);
+            this.textBoxPropinaEfectivo.TabIndex = 21;
+            // 
+            // textBoxPropinaTarjeta
+            // 
+            this.textBoxPropinaTarjeta.Location = new System.Drawing.Point(360, 246);
+            this.textBoxPropinaTarjeta.Name = "textBoxPropinaTarjeta";
+            this.textBoxPropinaTarjeta.Size = new System.Drawing.Size(132, 20);
+            this.textBoxPropinaTarjeta.TabIndex = 22;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(212, 230);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(107, 13);
+            this.label4.TabIndex = 23;
+            this.label4.Text = "Propinas efectivo ($):";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(357, 230);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(98, 13);
+            this.label5.TabIndex = 24;
+            this.label5.Text = "Propinas tarjeta ($):";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(800, 342);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.textBoxPropinaTarjeta);
+            this.Controls.Add(this.textBoxPropinaEfectivo);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panelOculto);
             this.Controls.Add(this.label2);
@@ -335,6 +375,10 @@
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Button buttonCerrar;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.TextBox textBoxPropinaEfectivo;
+        private System.Windows.Forms.TextBox textBoxPropinaTarjeta;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label5;
     }
 }
 

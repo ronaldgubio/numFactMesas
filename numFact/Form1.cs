@@ -116,6 +116,19 @@ namespace numFact
             }
         }
 
+        decimal ConvertirANumero(String texto)
+        {
+            decimal numero = 0;
+            try {
+                numero = decimal.Parse(texto);
+            }
+            catch
+            {
+                throw new Exception("Valor ingresado no es un número válido.");
+            }
+            return numero;
+        }
+
         void ProcesarVentas()
         {
             try
@@ -124,7 +137,26 @@ namespace numFact
                 {
                     throw new Exception("seleccione el día de venta");
                 }
-                pixelDAO.EjecutarProcesoVentas(dataGridViewVentas.CurrentRow.Cells[0].Value.ToString());
+
+                if (textBoxPropinaEfectivo.Text.Length <= 0)
+                {
+                    throw new Exception("Ingrese valor de la propina en efectivo.");
+                }
+
+                if (textBoxPropinaTarjeta.Text.Length <= 0)
+                {
+                    throw new Exception("Ingrese valor de la propina en tarjetas.");
+                }
+
+                decimal propinaEfectivo = ConvertirANumero(textBoxPropinaEfectivo.Text);
+                decimal propinaTarjeta = ConvertirANumero(textBoxPropinaTarjeta.Text);
+
+                pixelDAO.EjecutarProcesoVentas(dataGridViewVentas.CurrentRow.Cells[0].Value.ToString(),
+                    propinaEfectivo,
+                    propinaTarjeta
+                    );
+                textBoxPropinaEfectivo.Text = "";
+                textBoxPropinaTarjeta.Text = "";
                 this.Invoke(new Action(() => { CargarVentasPendientes(); }));
                 this.Invoke(new Action(() => { MessageBox.Show(this, "Proceso completado con éxito", "Correcto", MessageBoxButtons.OK, MessageBoxIcon.Information); }));
             }
@@ -174,7 +206,19 @@ namespace numFact
             //contrario se sigue el flujo normal
             if (valorTotalDescuento > new Decimal(0.01))
             {
-                AsignacionDescuento asignacionDescuento = new AsignacionDescuento(idTabla, valorTotalDescuento);
+                if (textBoxPropinaEfectivo.Text.Length <= 0)
+                {
+                    throw new Exception("Ingrese valor de la propina en efectivo.");
+                }
+
+                if (textBoxPropinaTarjeta.Text.Length <= 0)
+                {
+                    throw new Exception("Ingrese valor de la propina en tarjetas.");
+                }
+
+                decimal propinaEfectivo = ConvertirANumero(textBoxPropinaEfectivo.Text);
+                decimal propinaTarjeta = ConvertirANumero(textBoxPropinaTarjeta.Text);
+                AsignacionDescuento asignacionDescuento = new AsignacionDescuento(idTabla, valorTotalDescuento,propinaEfectivo, propinaTarjeta);
                 asignacionDescuento.ShowDialog(this);
             }
             else
@@ -216,7 +260,7 @@ namespace numFact
         {
             try
             {
-                pixelDAO.ProvisionalEjecutarProcesoFE();
+                //pixelDAO.ProvisionalEjecutarProcesoFE();
                 MessageBox.Show("correcto");
             }
             catch (Exception ex)

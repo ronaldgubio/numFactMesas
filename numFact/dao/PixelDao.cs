@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.Odbc;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -597,7 +598,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
             }
         }
 
-        public void EjecutarProcesoVentas(String idTabla)
+        public void EjecutarProcesoVentas(String idTabla, decimal propinaEfectivo, decimal propinaTarjeta)
         {
             OdbcConnection conPixel = null;
             OdbcTransaction tranPixel = null;
@@ -623,10 +624,12 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 //CopiarInformacionParaQLikSense(idTabla, conPixel, tranPixel, conOracle, tranOracle);
 
                 //llamo el procedimiento 1
-                OdbcCommand comandoPixel1 = new OdbcCommand("{call dba.ACK_LTG_VENTAS_PAGOS(?)}", conPixel);
+                OdbcCommand comandoPixel1 = new OdbcCommand("{call dba.ACK_LTG_VENTAS_PAGOS_P2(?, ?, ?)}", conPixel);
                 comandoPixel1.CommandType = CommandType.StoredProcedure;
                 comandoPixel1.Transaction = tranPixel;
                 comandoPixel1.Parameters.AddWithValue("@idTabla", idTabla);
+                comandoPixel1.Parameters.AddWithValue("@propinaEfectivo", propinaEfectivo);
+                comandoPixel1.Parameters.AddWithValue("@propinaTarjeta", propinaTarjeta);
                 comandoPixel1.ExecuteNonQuery();
 
                 //llamo el procedimiento 2
@@ -653,7 +656,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
 
         public void Prueba()
         {
-            String idTabla = "20190902";
+            //String idTabla = "20190902";
             OdbcConnection conPixel = null;
             OdbcTransaction tranPixel = null;
             //OdbcConnection conOracle = null;
@@ -1137,7 +1140,17 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 conPixel = conexiones.GetOdbcConnectionPixel();
 
                 //listo las facturas
-                OdbcCommand comandoPixel = new OdbcCommand("SELECT SI.Fax AS RUC,SI.Owner AS NOM_COMERCIAL,SI.Contact AS NOM_LOCAL,SI.Email AS DIR_MATRIZ,SI.Website AS DIR_LOCAL,SI.City AS OBL_CONTA,SI.Country AS PUNTO_EMI,SI.Postal AS CONT_ESPECIAL,SI.Prov AS NUM_LOCAL,SI.Phone AS GENERA_XML,SI.Address1 AS PATH_LOCAL,SI.Address2 AS PATH_SERVER,SI.RptComment AS PATH_RUTAS,(SELECT DBA.PARAMETROS_DLL.AMBIENTE_FE FROM DBA.PARAMETROS_DLL),SI.ColaborationURL FROM DBA.Sysinfo SI", conPixel);
+                //OdbcCommand comandoPixel = new OdbcCommand("SELECT SI.Fax AS RUC,SI.Owner AS NOM_COMERCIAL,SI.Contact AS NOM_LOCAL,SI.Email AS DIR_MATRIZ,SI.Website AS DIR_LOCAL,SI.City AS OBL_CONTA,SI.Country AS PUNTO_EMI,SI.Postal AS CONT_ESPECIAL,SI.Prov AS NUM_LOCAL,SI.Phone AS GENERA_XML,SI.Address1 AS PATH_LOCAL,SI.Address2 AS PATH_SERVER,SI.RptComment AS PATH_RUTAS,(SELECT DBA.PARAMETROS_DLL.AMBIENTE_FE FROM DBA.PARAMETROS_DLL),SI.ColaborationURL FROM DBA.Sysinfo SI", conPixel);
+                OdbcCommand comandoPixel = new OdbcCommand(@"select aa.Detail, bb.Detail, cc.Detail,dd.Detail, ee.Detail, ff.Detail,gg.Detail,hh.Detail, ii.Detail, jj.Detail  from DBA.EC_FiscalSetting aa
+                                                                inner join DBA.EC_FiscalSetting bb on aa.NameKey ='GetRuc' and bb.NameKey ='GetRazonSocial'
+                                                                inner join DBA.EC_FiscalSetting cc on cc.NameKey ='GetNombreComercial'
+                                                                inner join DBA.EC_FiscalSetting dd on dd.NameKey ='GetDireccionMatriz'
+                                                                inner join DBA.EC_FiscalSetting ee on ee.NameKey ='GetDireccionLocal'
+                                                                inner join DBA.EC_FiscalSetting ff on ff.NameKey ='GetObligadoContabilidad'
+                                                                inner join DBA.EC_FiscalSetting gg on gg.NameKey ='GetPuntoEmision'
+                                                                inner join DBA.EC_FiscalSetting hh on hh.NameKey ='GetNumContribuyente'
+                                                                inner join DBA.EC_FiscalSetting ii on ii.NameKey ='GetNumLocal'
+                                                                inner join DBA.EC_FiscalSetting jj on jj.NameKey ='GetAmbienteFE'", conPixel);
                 comandoPixel.ExecuteNonQuery();
                 readerDatos = comandoPixel.ExecuteReader();
 
@@ -1150,15 +1163,15 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                     while (readerDatos.Read())
                     {
                         facturaDatosGenerales.infoTributaria.ruc = readerDatos.GetString(0);
-                        facturaDatosGenerales.infoTributaria.nombreComercial = readerDatos.GetString(2);
                         facturaDatosGenerales.infoTributaria.razonSocial = readerDatos.GetString(1);
+                        facturaDatosGenerales.infoTributaria.nombreComercial = readerDatos.GetString(2);
                         facturaDatosGenerales.infoTributaria.dirMatriz = readerDatos.GetString(3);
                         facturaDatosGenerales.infoFactura.dirEstablecimiento = readerDatos.GetString(4);
                         facturaDatosGenerales.infoFactura.obligadoContabilidad = readerDatos.GetString(5);
                         facturaDatosGenerales.infoTributaria.ptoEmi = readerDatos.GetString(6);
                         facturaDatosGenerales.infoFactura.contribuyenteEspecial = readerDatos.GetString(7);
                         facturaDatosGenerales.infoTributaria.estab = readerDatos.GetString(8);
-                        facturaDatosGenerales.infoTributaria.ambiente = readerDatos.GetString(13);
+                        facturaDatosGenerales.infoTributaria.ambiente = readerDatos.GetString(9);
                         facturaDatosGenerales.infoTributaria.codDoc = GetConfigProp("FacturaCodDoc");
                         facturaDatosGenerales.infoTributaria.tipoEmision = GetConfigProp("FacturaTipoEmision");
                     }
@@ -1168,12 +1181,12 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 //listo las facturas
                 if (transaccionCodigo == null)
                 {
-                    comandoPixel = new OdbcCommand("SELECT CA.TaxNumber, SUBSTRING(PH.REFID, 7, 9), convert(char(10),PH.TIMEEND,103),(CASE WHEN trim(cast(M.POSTAL as varchar)) IS NULL OR trim(cast(M.POSTAL as varchar))='0' THEN '06' WHEN LENGTH(trim(cast(M.POSTAL as varchar)))<=1 THEN '0' || trim(cast(M.POSTAL as varchar)) END) AS T_DOC,M.FIRSTNAME || ' ' || M.LASTNAME,M.ADRESS2,trim(str(round(PH.NETTOTAL,2),16,2)),trim(str(round((case when (truncnum(ph.NETTOTAL,2)-truncnum(ph.TAX1ABLE,2)) not between -0.02 and 0.02 then round(ph.NETTOTAL,2)-round(ph.TAX1ABLE,2) else 0 end), 2), 16, 2)) AS IVA_0,trim(str(round(PH.TAX1ABLE,2),16,2)),trim(str(round(PH.TAX1,2),16,2)),trim(str(round((CASE WHEN (SELECT DBA.Sysinfo.TAXRATE3 FROM DBA.Sysinfo) = 10 THEN PH.TAX3ABLE ELSE PH.TAX2ABLE END),2),16,2)) AS SERVICIO,trim(str(round(PH.FINALTOTAL,2),16,2)),(CASE WHEN M.EMAIL IS NULL OR LENGTH(M.EMAIL)=0 THEN (SELECT dba.Sysinfo.Address2 FROM DBA.Sysinfo)ELSE M.EMAIL END) AS CORREO,EM.POSNAME,cast(PH.TRANSACT as varchar) codigo,CONVERT(CHAR(10),PH.TIMEEND,111),(CASE WHEN LENGTH(M.ADRESS1)= 0 OR M.ADRESS1 IS NULL THEN 'NINGUNA' ELSE M.ADRESS1 END) direccion FROM DBA.POSHEADER PH INNER JOIN DBA.Member M ON  PH.MemCode=M.MEMCODE INNER JOIN DBA.employee EM ON PH.WHOCLOSE=EM.EMPNUM INNER JOIN DBA.TaxExemptNumbers CA ON PH.TRANSACT= CA.TRANSACT WHERE (PH.OPENDATE = ? And PH.REFID <> 0) AND PH.TRANSACT IN(SELECT PD.TRANSACT FROM DBA.POSDETAIL PD WHERE PD.PRODTYPE NOT IN(101) AND PD.COSTEACH>0) ORDER BY PH.REFID", conPixel);
+                    comandoPixel = new OdbcCommand("SELECT CA.TaxNumber, SUBSTRING(PH.REFID, 7, 9), convert(char(10),PH.TIMEEND,103),(CASE WHEN trim(cast(M.MemCodeLink as varchar)) IS NULL OR trim(cast(M.MemCodeLink as varchar))='0' THEN '06' WHEN LENGTH(trim(cast(M.MemCodeLink as varchar)))<=1 THEN '0' || trim(cast(M.MemCodeLink as varchar)) END) AS T_DOC, M.FIRSTNAME || ' ' || M.LASTNAME,M.ADRESS2,trim(str(round(PH.NETTOTAL,2),16,2)),trim(str(round((case when (truncnum(ph.NETTOTAL,2)-truncnum(ph.TAX1ABLE,2)) not between -0.02 and 0.02 then round(ph.NETTOTAL,2)-round(ph.TAX1ABLE,2) else 0 end), 2), 16, 2)) AS IVA_0,trim(str(round(PH.TAX1ABLE,2),16,2)),trim(str(round(PH.TAX1,2),16,2)),trim(str(round((CASE WHEN (SELECT DBA.Sysinfo.TAXRATE3 FROM DBA.Sysinfo) = 10 THEN PH.TAX3ABLE ELSE PH.TAX2ABLE END),2),16,2)) AS SERVICIO,trim(str(round(PH.FINALTOTAL,2),16,2)),(CASE WHEN M.EMAIL IS NULL OR LENGTH(M.EMAIL)=0 THEN (SELECT dba.Sysinfo.Address2 FROM DBA.Sysinfo)ELSE M.EMAIL END) AS CORREO,EM.POSNAME,cast(PH.TRANSACT as varchar) codigo,CONVERT(CHAR(10),PH.TIMEEND,111),(CASE WHEN LENGTH(M.ADRESS1)= 0 OR M.ADRESS1 IS NULL THEN 'NINGUNA' ELSE M.ADRESS1 END) direccion FROM DBA.POSHEADER PH INNER JOIN DBA.Member M ON  PH.MemCode=M.MEMCODE INNER JOIN DBA.employee EM ON PH.WHOCLOSE=EM.EMPNUM INNER JOIN DBA.TaxExemptNumbers CA ON PH.TRANSACT= CA.TRANSACT WHERE (PH.OPENDATE = ? And PH.REFID <> 0) AND PH.TRANSACT IN(SELECT PD.TRANSACT FROM DBA.POSDETAIL PD WHERE PD.PRODTYPE NOT IN(101) AND PD.COSTEACH>0) ORDER BY PH.REFID", conPixel);
                     comandoPixel.Parameters.AddWithValue("@idTabla", idTabla);
                 }
                 else
                 {
-                    comandoPixel = new OdbcCommand("SELECT CA.TaxNumber, SUBSTRING(PH.REFID, 7, 9), convert(char(10),PH.TIMEEND,103),(CASE WHEN trim(cast(M.POSTAL as varchar)) IS NULL OR trim(cast(M.POSTAL as varchar))='0' THEN '06' WHEN LENGTH(trim(cast(M.POSTAL as varchar)))<=1 THEN '0' || trim(cast(M.POSTAL as varchar)) END) AS T_DOC,M.FIRSTNAME || ' ' || M.LASTNAME,M.ADRESS2,trim(str(round(PH.NETTOTAL,2),16,2)),trim(str(round((case when (truncnum(ph.NETTOTAL,2)-truncnum(ph.TAX1ABLE,2)) not between -0.02 and 0.02 then round(ph.NETTOTAL,2)-round(ph.TAX1ABLE,2) else 0 end), 2), 16, 2)) AS IVA_0,trim(str(round(PH.TAX1ABLE,2),16,2)),trim(str(round(PH.TAX1,2),16,2)),trim(str(round((CASE WHEN (SELECT DBA.Sysinfo.TAXRATE3 FROM DBA.Sysinfo) = 10 THEN PH.TAX3ABLE ELSE PH.TAX2ABLE END),2),16,2)) AS SERVICIO,trim(str(round(PH.FINALTOTAL,2),16,2)),(CASE WHEN M.EMAIL IS NULL OR LENGTH(M.EMAIL)=0 THEN (SELECT dba.Sysinfo.Address2 FROM DBA.Sysinfo)ELSE M.EMAIL END) AS CORREO,EM.POSNAME,cast(PH.TRANSACT as varchar) codigo,CONVERT(CHAR(10),PH.TIMEEND,111),(CASE WHEN LENGTH(M.ADRESS1)= 0 OR M.ADRESS1 IS NULL THEN 'NINGUNA' ELSE M.ADRESS1 END) direccion FROM DBA.POSHEADER PH INNER JOIN DBA.Member M ON  PH.MemCode=M.MEMCODE INNER JOIN DBA.employee EM ON PH.WHOCLOSE=EM.EMPNUM INNER JOIN DBA.TaxExemptNumbers CA ON PH.TRANSACT= CA.TRANSACT WHERE (PH.Transact = ? And PH.REFID <> 0) AND PH.TRANSACT IN(SELECT PD.TRANSACT FROM DBA.POSDETAIL PD WHERE PD.PRODTYPE NOT IN(101) AND PD.COSTEACH>0) ORDER BY PH.REFID", conPixel);
+                    comandoPixel = new OdbcCommand("SELECT CA.TaxNumber, SUBSTRING(PH.REFID, 7, 9), convert(char(10),PH.TIMEEND,103),(CASE WHEN trim(cast(M.MemCodeLink as varchar)) IS NULL OR trim(cast(M.MemCodeLink as varchar))='0' THEN '06' WHEN LENGTH(trim(cast(M.MemCodeLink as varchar)))<=1 THEN '0' || trim(cast(M.MemCodeLink as varchar)) END) AS T_DOC, M.FIRSTNAME || ' ' || M.LASTNAME,M.ADRESS2,trim(str(round(PH.NETTOTAL,2),16,2)),trim(str(round((case when (truncnum(ph.NETTOTAL,2)-truncnum(ph.TAX1ABLE,2)) not between -0.02 and 0.02 then round(ph.NETTOTAL,2)-round(ph.TAX1ABLE,2) else 0 end), 2), 16, 2)) AS IVA_0,trim(str(round(PH.TAX1ABLE,2),16,2)),trim(str(round(PH.TAX1,2),16,2)),trim(str(round((CASE WHEN (SELECT DBA.Sysinfo.TAXRATE3 FROM DBA.Sysinfo) = 10 THEN PH.TAX3ABLE ELSE PH.TAX2ABLE END),2),16,2)) AS SERVICIO,trim(str(round(PH.FINALTOTAL,2),16,2)),(CASE WHEN M.EMAIL IS NULL OR LENGTH(M.EMAIL)=0 THEN (SELECT dba.Sysinfo.Address2 FROM DBA.Sysinfo)ELSE M.EMAIL END) AS CORREO,EM.POSNAME,cast(PH.TRANSACT as varchar) codigo,CONVERT(CHAR(10),PH.TIMEEND,111),(CASE WHEN LENGTH(M.ADRESS1)= 0 OR M.ADRESS1 IS NULL THEN 'NINGUNA' ELSE M.ADRESS1 END) direccion FROM DBA.POSHEADER PH INNER JOIN DBA.Member M ON  PH.MemCode=M.MEMCODE INNER JOIN DBA.employee EM ON PH.WHOCLOSE=EM.EMPNUM INNER JOIN DBA.TaxExemptNumbers CA ON PH.TRANSACT= CA.TRANSACT WHERE (PH.Transact = ? And PH.REFID <> 0) AND PH.TRANSACT IN(SELECT PD.TRANSACT FROM DBA.POSDETAIL PD WHERE PD.PRODTYPE NOT IN(101) AND PD.COSTEACH>0) ORDER BY PH.REFID", conPixel);
                     comandoPixel.Parameters.AddWithValue("@transaccionCodigo", transaccionCodigo);
                 }
                 comandoPixel.ExecuteNonQuery();
@@ -1273,7 +1286,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                         readerDatosFP.Close();
 
                         //listo los detalles de la factura
-                        OdbcCommand comandoPixelDF = new OdbcCommand("SELECT PD.PRODNUM AS ID_PROD,(CASE WHEN PD.LINEDES IS NOT NULL OR LENGTH(PD.LINEDES)>0 THEN PD.LINEDES ELSE PR.PRINTDES END) AS PRODUCTO,trim(str(round(PD.QUAN,2),16,2)) AS CANTIDAD,trim(str(round(PD.COSTEACH,2),16,2)) AS P_UNITARIO,trim(str(round((CASE WHEN (ISNULL(PD.DISCOUNT,0))<0 THEN (ISNULL(PD.DISCOUNT,0))*-1 ELSE (ISNULL(PD.DISCOUNT,0)) END),2),16,2)) AS DESCUENTO,trim(str(round((PD.QUAN * PD.COSTEACH) - DESCUENTO,2),16,2)) AS  P_TOTAL_SIN_IMPUESTOS,(CASE WHEN PD.APPLYTAX1=1 THEN 2 ELSE 0 END) AS CODIGO_PORCENTAJE,(CASE WHEN CODIGO_PORCENTAJE=2 THEN 12 ELSE 0 END) AS TARIFA,trim(str(round(P_TOTAL_SIN_IMPUESTOS,2),16,2)) AS BASE_IMPONIBLE,trim(str(round((P_TOTAL_SIN_IMPUESTOS * TARIFA)/100,2),16,2)) AS VALOR FROM DBA.POSDETAIL PD INNER JOIN DBA.PRODUCT PR ON PD.PRODNUM=PR.PRODNUM WHERE PD.PRODTYPE NOT IN (100,101) and pd.COSTEACH<>0 AND PD.TRANSACT=?", conPixel);
+                        OdbcCommand comandoPixelDF = new OdbcCommand("SELECT PD.PRODNUM AS ID_PROD,PR.PRINTDES AS PRODUCTO,trim(str(round(PD.QUAN,2),16,2)) AS CANTIDAD,trim(str(round(PD.COSTEACH,2),16,2)) AS P_UNITARIO,trim(str(round((CASE WHEN (ISNULL(PD.DISCOUNT,0))<0 THEN (ISNULL(PD.DISCOUNT,0))*-1 ELSE (ISNULL(PD.DISCOUNT,0)) END),2),16,2)) AS DESCUENTO,trim(str(round((PD.QUAN * PD.COSTEACH) - DESCUENTO,2),16,2)) AS  P_TOTAL_SIN_IMPUESTOS,(CASE WHEN PD.APPLYTAX1=1 THEN " + GetConfigProp("FacturaImpuestos12CodigoPorcentaje") + " ELSE 0 END) AS CODIGO_PORCENTAJE,(CASE WHEN CODIGO_PORCENTAJE in(2,8) THEN " + GetConfigProp("FacturaImpuestos12Tarifa") + " ELSE 0 END) AS TARIFA,trim(str(round(P_TOTAL_SIN_IMPUESTOS,2),16,2)) AS BASE_IMPONIBLE,trim(str(round((P_TOTAL_SIN_IMPUESTOS * TARIFA)/100,2),16,2)) AS VALOR FROM DBA.POSDETAIL PD INNER JOIN DBA.PRODUCT PR ON PD.PRODNUM=PR.PRODNUM WHERE PD.PRODTYPE NOT IN (100,101) and pd.COSTEACH<>0 AND PD.TRANSACT=?", conPixel);
                         OdbcDataReader readerDatosDF = null;
                         comandoPixelDF.Parameters.AddWithValue("@idTransaccion", readerDatos.GetString(14));
                         comandoPixelDF.ExecuteNonQuery();
@@ -1376,7 +1389,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
 
         //*******************************************************************
         //procedimientos provisionales para generacion total de comprobantes por local
-        public void ProvisionalEjecutarProcesoFE()
+        /*public void ProvisionalEjecutarProcesoFE()
         {
             try
             {
@@ -1406,6 +1419,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 throw ex;
             }
         }
+        */
 
 
         private Boolean FacturaExisteEnOracle(String facturaNumero)
@@ -1416,7 +1430,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
             try
             {
                 //Abro la conexión a Pixel
-                conORA = conexiones.GetOdbcConnectionORA();
+                //conORA = conexiones.GetOdbcConnectionORA();
 
                 //llamo el procedimiento 2
                 OdbcCommand comandoORA = new OdbcCommand("SELECT count(*) from inf_comprobante_offline where coof_comprobantenumero=?", conORA);
@@ -1446,7 +1460,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
             return retorno;
         }
 
-        public List<Factura> GenerarListaFacturasProvisional(String idTabla)
+        /*public List<Factura> GenerarListaFacturasProvisional(String idTabla)
         {
             List<Factura> retorno = new List<Factura>();
             OdbcConnection conPixel = null;
@@ -1583,7 +1597,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                         readerDatosFP.Close();
 
                         //listo los detalles de la factura
-                        OdbcCommand comandoPixelDF = new OdbcCommand("SELECT PD.PRODNUM AS ID_PROD,(CASE WHEN PD.LINEDES IS NOT NULL OR LENGTH(PD.LINEDES)>0 THEN PD.LINEDES ELSE PR.PRINTDES END) AS PRODUCTO,trim(str(round(PD.QUAN,2),16,2)) AS CANTIDAD,trim(str(round(PD.COSTEACH,2),16,2)) AS P_UNITARIO,trim(str(round((CASE WHEN (ISNULL(PD.DISCOUNT,0))<0 THEN (ISNULL(PD.DISCOUNT,0))*-1 ELSE (ISNULL(PD.DISCOUNT,0)) END),2),16,2)) AS DESCUENTO,trim(str(round((PD.QUAN * PD.COSTEACH) - DESCUENTO,2),16,2)) AS  P_TOTAL_SIN_IMPUESTOS,(CASE WHEN PD.APPLYTAX1=1 THEN 2 ELSE 0 END) AS CODIGO_PORCENTAJE,(CASE WHEN CODIGO_PORCENTAJE=2 THEN 12 ELSE 0 END) AS TARIFA,trim(str(round(P_TOTAL_SIN_IMPUESTOS,2),16,2)) AS BASE_IMPONIBLE,trim(str(round((P_TOTAL_SIN_IMPUESTOS * TARIFA)/100,2),16,2)) AS VALOR FROM DBA.POSDETAIL PD INNER JOIN DBA.PRODUCT PR ON PD.PRODNUM=PR.PRODNUM WHERE PD.PRODTYPE NOT IN (100,101,1) AND PD.TRANSACT=?", conPixel);
+                        OdbcCommand comandoPixelDF = new OdbcCommand("SELECT PD.PRODNUM AS ID_PROD,(CASE WHEN PD.LINEDES IS NOT NULL OR LENGTH(PD.LINEDES)>0 THEN PD.LINEDES ELSE PR.PRINTDES END) AS PRODUCTO,trim(str(round(PD.QUAN,2),16,2)) AS CANTIDAD,trim(str(round(PD.COSTEACH,2),16,2)) AS P_UNITARIO,trim(str(round((CASE WHEN (ISNULL(PD.DISCOUNT,0))<0 THEN (ISNULL(PD.DISCOUNT,0))*-1 ELSE (ISNULL(PD.DISCOUNT,0)) END),2),16,2)) AS DESCUENTO,trim(str(round((PD.QUAN * PD.COSTEACH) - DESCUENTO,2),16,2)) AS  P_TOTAL_SIN_IMPUESTOS,(CASE WHEN PD.APPLYTAX1=1 THEN "+GetConfigProp("FacturaImpuestos12CodigoPorcentaje") +" ELSE 0 END) AS CODIGO_PORCENTAJE,(CASE WHEN CODIGO_PORCENTAJE in(2,8) THEN "+GetConfigProp("FacturaImpuestos12Tarifa") +" ELSE 0 END) AS TARIFA,trim(str(round(P_TOTAL_SIN_IMPUESTOS,2),16,2)) AS BASE_IMPONIBLE,trim(str(round((P_TOTAL_SIN_IMPUESTOS * TARIFA)/100,2),16,2)) AS VALOR FROM DBA.POSDETAIL PD INNER JOIN DBA.PRODUCT PR ON PD.PRODNUM=PR.PRODNUM WHERE PD.PRODTYPE NOT IN (100,101,1) AND PD.TRANSACT=?", conPixel);
                         OdbcDataReader readerDatosDF = null;
                         comandoPixelDF.Parameters.AddWithValue("@idTransaccion", readerDatos.GetString(14));
                         comandoPixelDF.ExecuteNonQuery();
@@ -1686,6 +1700,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
             }
             return retorno;
         }
+*/
 
         public Boolean ComprobarSiTransaccionExiste(String transaccionCodigo)
         {
@@ -1721,19 +1736,19 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
         //saco el personal que está disponible en la nómina de SquareNet
         public List<RhPersona> GetPersonaFromNominaByFiltros(String personaFiltroBusqueda)
         {
-            OdbcConnection conPixel = null;
+            SqlConnection conSql = null;
             List<RhPersona> retorno = new List<RhPersona>();
             try
             {
                 //Abro la conexión a Pixel
-                conPixel = conexiones.getOdbcConnectionSquarenet();
+                conSql = conexiones.getOdbcConnectionSquarenet();
 
                 //llamo el procedimiento 2
-                OdbcCommand comandoPixel1 = new OdbcCommand("SELECT persona_nombre, persona_id, persona_tipo from RH_PERSONA_ACTIVO_LTG_VIEW aa where upper(aa.persona_nombre) like '%'+upper(?)+'%' or upper(aa.persona_id) like '%'+upper(?)+'%' order by 1,2", conPixel);
+                SqlCommand comandoPixel1 = new SqlCommand("SELECT persona_nombre, persona_id, persona_tipo from RH_PERSONA_ACTIVO_LTG_VIEW aa where upper(aa.persona_nombre) like '%'+upper(@nombre)+'%' or upper(aa.persona_id) like '%'+upper(@cedula)+'%' order by 1,2", conSql);
                 //OdbcCommand comandoPixel1 = new OdbcCommand("SELECT DBA.Dayinfo.UId,DBA.Dayinfo.OPENDATE,DBA.Dayinfo.TIMEEND FROM DBA.Dayinfo WHERE DBA.Dayinfo.TIMEEND IS NOT NULL ORDER BY 2 DESC", conPixel);
                 comandoPixel1.Parameters.AddWithValue("nombre", personaFiltroBusqueda);
                 comandoPixel1.Parameters.AddWithValue("cedula", personaFiltroBusqueda);
-                OdbcDataReader dataReader = null;
+                SqlDataReader dataReader = null;
                 dataReader = comandoPixel1.ExecuteReader();
                 while (dataReader.Read())
                 {
@@ -1752,14 +1767,14 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
             }
             finally
             {
-                conexiones.CloseConnection(conPixel);
+                conexiones.CloseConnectionSql(conSql);
             }
             return retorno;
         }
 
 
         //ejecutar proceso de ventas, asignación de descuentos en base intermedia y carga de CXC a Nómina
-        public void EjecutarProcesoVentasMasDescuentosMasNomina(String idTabla, List<Descuento> descuentos)
+        public void EjecutarProcesoVentasMasDescuentosMasNomina(String idTabla, List<Descuento> descuentos, decimal propinaEfectivo, decimal propinaTarjeta)
         {
             //objetos odbc pixel
             OdbcConnection conPixel = null;
@@ -1770,8 +1785,8 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
             OdbcTransaction tranBI = null;
 
             //objetos odbc sql server nómina
-            OdbcConnection conNomina = null;
-            OdbcTransaction tranNomina = null;
+            SqlConnection conNomina = null;
+            SqlTransaction tranNomina = null;
             try
             {
                 //********************************************inicio del paso 1*********************************************
@@ -1811,10 +1826,12 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 if (ejecutarPrimerPaso)
                 {
                     //llamo el procedimiento 1
-                    OdbcCommand comandoPixel1 = new OdbcCommand("{call dba.ACK_LTG_VENTAS_PAGOS(?)}", conPixel);
+                    OdbcCommand comandoPixel1 = new OdbcCommand("{call dba.ACK_LTG_VENTAS_PAGOS_P2(?, ?, ?)}", conPixel);
                     comandoPixel1.CommandType = CommandType.StoredProcedure;
                     comandoPixel1.Transaction = tranPixel;
                     comandoPixel1.Parameters.AddWithValue("@idTabla", idTabla);
+                    comandoPixel1.Parameters.AddWithValue("@propinaEfectivo", propinaEfectivo);
+                    comandoPixel1.Parameters.AddWithValue("@propinaTarjeta", propinaTarjeta);
                     comandoPixel1.ExecuteNonQuery();
                     //proceso intermedio y cierre de la transacción primera
                     conexiones.CommitTransaction(tranPixel);
@@ -1949,7 +1966,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 //Inicio la transacción
                 tranNomina = conNomina.BeginTransaction();
 
-                OdbcCommand comandoNomina0 = new OdbcCommand("SELECT cod_centro_costo FROM co_centro_costo where whs_code=? and cod_empresa=?", conNomina);
+                SqlCommand comandoNomina0 = new SqlCommand("SELECT cod_centro_costo FROM co_centro_costo where whs_code=@almacen and cod_empresa=@empresa", conNomina);
                 comandoNomina0.Transaction = tranNomina;
                 comandoNomina0.Parameters.AddWithValue("@almacen", almacen);
                 comandoNomina0.Parameters.AddWithValue("@empresa", GetConfigProp("CodigoEmpresaNomina"));
@@ -1963,7 +1980,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 //realizo la inserción de los descuentos en Sistema de Nómina
                 foreach (Descuento descTmp in descuentos)
                 {
-                    OdbcCommand comandoNomina1 = new OdbcCommand("insert into ltg_cxc(CXCINDEX, USROCDGO_CXC, USRONMBR_CXC, USROFCIN, LOCAL_CXC, VALOR_CXC, MOTIVO_CXC, COD_EMPRESA) values((select 'CXC-'+cast(max(cast(substring(aa.CXCINDEX, 5,len(aa.CXCINDEX)) as bigint)+1) as varchar) from ltg_cxc aa where aa.CXCINDEX like 'CXC-%'),?,?,?,?,?,?,?)", conNomina);
+                    SqlCommand comandoNomina1 = new SqlCommand("insert into ltg_cxc(CXCINDEX, USROCDGO_CXC, USRONMBR_CXC, USROFCIN, LOCAL_CXC, VALOR_CXC, MOTIVO_CXC, COD_EMPRESA) values((select 'CXC-'+cast(max(cast(substring(aa.CXCINDEX, 5,len(aa.CXCINDEX)) as bigint)+1) as varchar) from ltg_cxc aa where aa.CXCINDEX like 'CXC-%'),@1,@2,@3,@4,@5,@6,@7)", conNomina);
                     comandoNomina1.Transaction = tranNomina;
 
                     if (descTmp.Tipo.Equals("PERSONA"))
@@ -1980,7 +1997,7 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 }
 
                 //actualización de estados en BI 
-                OdbcCommand comandoBI5 = new OdbcCommand("UPDATE oinv SET Sincronizado='P' WHERE Identificador=?", conBI);
+                OdbcCommand comandoBI5 = new OdbcCommand("UPDATE oinv SET Sincronizado = 'P' WHERE Identificador=?", conBI);
                 comandoBI5.Transaction = tranBI;
                 comandoBI5.Parameters.AddWithValue("@idTabla", almacen + "-" + idTabla);
                 comandoBI5.ExecuteNonQuery();
@@ -1999,11 +2016,11 @@ from DBA.CASHOUTDETAIL where cashoutnum in(select aa.cashoutnum from DBA.cashout
                 //confirmo la transacción
                 conexiones.CommitAndCloseTransaction(tranPixel);
                 conexiones.CommitAndCloseTransaction(tranBI);
-                conexiones.CommitAndCloseTransaction(tranNomina);
+                conexiones.CommitAndCloseTransactionSql(tranNomina);
             }
             catch (Exception ex)
             {
-                conexiones.RollbackAndCloseTransaction(tranNomina);
+                conexiones.RollbackAndCloseTransactionSql(tranNomina);
                 conexiones.RollbackAndCloseTransaction(tranBI);
                 conexiones.RollbackAndCloseTransaction(tranPixel);
                 throw ex;
